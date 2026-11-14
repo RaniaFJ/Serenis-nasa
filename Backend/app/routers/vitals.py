@@ -1,7 +1,8 @@
-from datetime import datetime
+from app.schemas import vitals as schemas
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from app.database import get_db, require_astronaut
@@ -143,4 +144,50 @@ async def resolve_alert(
     return {
         "message": "Alerte marquée comme résolue.",
         "alert": updated_alert,
+    }
+@router.get("/charts/{indicator_code}", response_model=schemas.ChartHistoryResponse)
+async def get_chart_history(
+    indicator_code: str, 
+    days: int = Query(default=7, ge=1, le=30),
+    db = Depends(get_db)
+):
+    # 1. Calculate the start date (e.g., 7 days ago)
+    start_date = datetime.now(timezone.utc) - timedelta(days=days)
+
+    # 2. Query the view from the PostgreSQL SQL script
+    # The view automatically calculates the green/yellow/red status for us!
+    query = """
+        SELECT i.code AS indicator_code, i.name AS indicator_name, i.unit,
+               v.value, v.measured_at, v.status, v.direction
+        FROM v_measurement_status v
+        JOIN indicators i ON i.id = v.indicator_id
+        WHERE i.code = %s AND v.measured_at >= %s
+        ORDER BY v.measured_at ASC
+    """
+    
+    # 3. Execute the query using psycopg (Async)
+    async with db.cursor() as cur:
+        await cur.execute(query, (indicator_code.upper(), start_date))
+        rows = await cur.fetchall()
+
+    # 4. If no data is found, return a 404 error
+    if not rows:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No measurements found for {indicator_code} in the last {days} days."
+        )
+
+    # 5. Format the response so Recharts (frontend) can easily read it
+    return {
+        "indicator_code": rows[0]["indicator_code"],
+        "indicator_name": rows[0]["indicator_name"],
+        "unit": rows[0]["unit"],
+        "history": [
+            {
+                "value": float(row["value"]),
+                "measured_at": row["measured_at"],
+                "status": row["status"],
+                "direction": row["direction"]
+            } for row in rows
+        ]
     }
