@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16
+    container_name: sentra-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: SENTRA_APP
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Missing POSTGRES_ADMIN_PASSWORD}
+      ASTRO_LOGIN_PASSWORD: ${ASTRO_LOGIN_PASSWORD:?Missing ASTRO_LOGIN_PASSWORD}
+    volumes:
+      - sentra_pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d SENTRA_APP"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentra-api
+    restart: unless-stopped
+    env_file:
+      - Backend/.env
+    environment:
+      DATABASE_URL: postgresql://astro_login:${ASTRO_LOGIN_PASSWORD}@db:5432/SENTRA_APP
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  sentra_pgdata:

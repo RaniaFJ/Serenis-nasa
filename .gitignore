@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Raw datasets - do not upload
+ml/data/raw/*
+!ml/data/raw/.gitkeep
+
+# Processed data
+ml/data/processed/*
+!ml/data/processed/.gitkeep
+
+# Trained models
+ml/saved_models/*
+!ml/saved_models/.gitkeep
+
+# Environment variables
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+
+# Local environment files
+.env
+**/.env
+
+!ml/saved_models/README.md

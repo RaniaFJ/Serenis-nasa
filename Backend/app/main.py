@@ -5,10 +5,11 @@ from fastapi.responses import JSONResponse
 from psycopg import errors as pg, Error as PgError
 
 from app.database import pool
-from app.routers import auth
+from app.routers import auth, ai
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    ai.load_model()
     await pool.open()
     yield
     await pool.close()
@@ -16,6 +17,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Astro API", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(auth.router)
+app.include_router(ai.router)
 
 def _pg_response(status: int, code: str, message: str, exc: PgError) -> JSONResponse:
     d = exc.diag
@@ -40,7 +42,7 @@ async def not_null_violation(_: Request, exc: pg.NotNullViolation):
 
 @app.exception_handler(pg.UniqueViolation)
 async def unique_violation(_: Request, exc: pg.UniqueViolation):
-    return _pg_response(409, "unique_violation", "Cette entrée existe déjà.", exc)
+    return _pg_response(409, "unique_violation", "Cette entrÃ©e existe dÃ©jÃ .", exc)
 
 @app.exception_handler(pg.ForeignKeyViolation)
 async def fk_violation(_: Request, exc: pg.ForeignKeyViolation):

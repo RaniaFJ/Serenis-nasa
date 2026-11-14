@@ -1,4 +1,4 @@
--- Astronaut Health Monitor | NASA Space Apps | PostgreSQL 15+
+﻿-- Astronaut Health Monitor | NASA Space Apps | PostgreSQL 15+
 -- Unified Database Script (Schema, Fixes, Security/RLS, Audit Log, & Reference Resources)
 -- Run: createdb astro && psql -d astro -v ON_ERROR_STOP=1 -f astro_health_pg_full.sql
 
@@ -272,7 +272,7 @@ INSERT INTO indicators
  (2,'SBP','Systolic Blood Pressure','mmHg',1,90,120,80,140,40,300,'Seated, arm at heart level, use the cuff, take 2 readings and average.','High or low pressure signals cardiovascular risk.','Fluid shifts and radiation exposure may change vascular function.',24),
  (3,'DBP','Diastolic Blood Pressure','mmHg',1,60,80,50,90,20,200,'Same reading as systolic.','Pairs with systolic for a complete picture.','Same as above.',24),
  (4,'GLU','Fasting Blood Glucose','mg/dL',4,70,100,60,125,20,600,'Fingerstick glucometer before first meal.','Detects insulin resistance and poor nutrition.','Stress and reduced activity can raise insulin resistance.',72),
- (5,'TEMP','Body Temperature','°C',6,36.1,37.2,35.5,38.0,30,43,'Use the oral or forehead thermometer, same time daily.','Fever indicates infection; low temp may signal hypothermia.','Immune changes in spaceflight; closed environment spreads microbes.',24),
+ (5,'TEMP','Body Temperature','Â°C',6,36.1,37.2,35.5,38.0,30,43,'Use the oral or forehead thermometer, same time daily.','Fever indicates infection; low temp may signal hypothermia.','Immune changes in spaceflight; closed environment spreads microbes.',24),
  (6,'SLEEP','Sleep Duration','hours',2,7,9,5.5,10,0,24,'Log from wearable or enter manually each morning.','Poor sleep hurts performance, mood and immunity.','Light cycles, noise and schedule shifts disrupt sleep.',24),
  (7,'MOOD','Mood Score','1-10',2,6,10,4,10,1,10,'Tap a 1-10 slider (1 = very low, 10 = great).','Tracks behavioral health trends early.','Isolation and confinement raise risk of depression and anxiety.',24),
  (8,'STRESS','Stress Level','1-10',2,0,4,0,7,1,10,'Tap a 1-10 slider (1 = calm, 10 = overwhelmed).','High sustained stress affects health and teamwork.','Workload, isolation, and communication delays raise stress.',24),
@@ -635,10 +635,10 @@ END $$;
 
 COMMIT;
 
-EATE ROLE astro_login LOGIN PASSWORD 'hackathon_astro_pass' IN ROLE astro_app;
-ALTER ROLE astro_login SET search_path = astro;
+-- Disabled malformed CREATE ROLE statement; role will be created separately.
+-- Disabled ALTER ROLE statement; role will be configured separately.
 -- =====================================================================
 -- MANUAL POST-SETUP (Run outside script; never commit passwords)
 -- =====================================================================
--- CREATE ROLE astro_login LOGIN PASSWORD '<strong_password>' IN ROLE astro_app;
+-- astro_login is created securely by the Docker initialization scripts.
 -- ALTER ROLE astro_login SET search_path = astro;
