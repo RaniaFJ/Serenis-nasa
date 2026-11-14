@@ -1,0 +1,14 @@
+# Front seul avec fausse API intégrée (aucun backend requis), à lancer depuis CE dossier :
+#   docker compose up --build        puis http://localhost:3000
+# Comptes de test : astro/astro123, surgeon/surgeon123, commander/cmd123
+# (Pour la pile complète front + backend + base, utiliser le docker-compose.yml à la racine du dépôt.)
+
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        VITE_USE_MOCK: "true"
+        VITE_SHOW_DEMO_ACCOUNTS: "true"
+    ports:
+      - "3000:80"
