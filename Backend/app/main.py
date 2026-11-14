@@ -1,3 +1,4 @@
+from app.routers import auth, gamification
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,7 +6,8 @@ from fastapi.responses import JSONResponse
 from psycopg import errors as pg, Error as PgError
 
 from app.database import pool
-from app.routers import auth ,vitals
+
+from app.routers import auth ,vitals, gamification
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -17,6 +19,9 @@ app = FastAPI(title="Astro API", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(auth.router)
 app.include_router(vitals.router)
+
+app.include_router(gamification.router)
+
 
 def _pg_response(status: int, code: str, message: str, exc: PgError) -> JSONResponse:
     d = exc.diag
