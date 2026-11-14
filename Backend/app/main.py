@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from psycopg import errors as pg, Error as PgError
 
 from app.database import pool
-from app.routers import auth
+from app.routers import auth ,vitals
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -16,6 +16,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Astro API", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(auth.router)
+app.include_router(vitals.router)
 
 def _pg_response(status: int, code: str, message: str, exc: PgError) -> JSONResponse:
     d = exc.diag
