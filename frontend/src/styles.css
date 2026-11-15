@@ -1,0 +1,140 @@
+@import 'tailwindcss';
+@import '@fontsource/barlow/400.css';
+@import '@fontsource/barlow/500.css';
+@import '@fontsource/barlow/600.css';
+@import '@fontsource/barlow-condensed/600.css';
+@import '@fontsource/barlow-condensed/700.css';
+@import '@fontsource-variable/jetbrains-mono';
+
+/*
+  Identité visuelle : la feuille de route d'un vol, pas un tableau de bord SaaS.
+  - Papier gris froid, encre bleu nuit, bords nets de 1 px, rayons de 3 px : on lit un formulaire de bord.
+  - Barlow, la famille des panneaux de signalisation, pour tout le texte ; Barlow Condensed pour les annonces GO / NO-GO.
+  - Les couleurs d'état (vert, ambre, rouge) ne servent qu'à l'état de santé. Le bleu NASA est la seule couleur d'action.
+  - Élément signature : le « poll » GO / NO-GO du contrôle de mission (tableau de bord) et le corps en 3D (onglet Corps humain).
+  - La barre latérale reste sombre : elle redéfinit les couleurs de texte dans sa portée (.sidebar).
+*/
+
+@theme {
+  --font-sans: 'Barlow', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Barlow Condensed', 'Barlow', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --color-ink: #e9edf0;
+  --color-panel: #f8f9fa;
+  --color-raised: #e0e6ea;
+  --color-edge: #cdd5db;
+  --color-edge-strong: #aab6c0;
+  --color-fg: #131f2c;
+  --color-mute: #536373;
+  --color-sig: #0b4aa2;
+  --color-ok: #17794f;
+  --color-warn: #a35f00;
+  --color-bad: #bf2b2b;
+  --color-stage: #0c1626;
+
+  --radius-panel: 0.25rem;
+  --radius-control: 0.1875rem;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-ink font-sans text-fg antialiased;
+    font-size: 1.0625rem;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-sig;
+  }
+  h1, h2, h3, h4 {
+    @apply font-semibold tracking-tight;
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-panel border border-edge bg-panel p-5;
+  }
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-control px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-sig text-white hover:bg-sig/90;
+  }
+  .btn-ghost {
+    @apply border border-edge-strong bg-transparent text-fg hover:bg-raised;
+  }
+  .btn-danger {
+    @apply bg-bad text-white hover:bg-bad/90;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+  .field {
+    @apply w-full min-w-0 rounded-control border border-edge-strong bg-white px-3 py-2 text-sm text-fg placeholder:text-mute focus:border-sig;
+  }
+  .label {
+    @apply flex flex-col gap-1.5 text-sm font-medium text-mute;
+  }
+  .section-title {
+    @apply text-sm font-medium text-mute;
+  }
+  .th {
+    @apply border-b border-edge-strong px-3 py-2 text-left font-medium text-mute;
+  }
+  .td {
+    @apply border-b border-edge px-3 py-2 align-top;
+  }
+  /* Barre latérale sombre : on redéfinit les couleurs de texte dans sa portée */
+  .sidebar {
+    --color-fg: #e8eef5;
+    --color-mute: #93a4b8;
+    --color-raised: #1c3254;
+    --color-edge: #243a5c;
+    --color-edge-strong: #35507a;
+    @apply bg-[#0f2240] text-fg;
+  }
+}
+
+/* Silhouette 2D de secours (si WebGL est indisponible) : les zones prennent la couleur d'état passée en variable CSS (--zone). */
+.silhouette circle,
+.silhouette rect,
+.silhouette path {
+  fill: #16294a;
+  stroke: #35507a;
+  stroke-width: 1.5;
+}
+.zone {
+  cursor: pointer;
+  outline: none;
+}
+.zone * {
+  fill: var(--zone);
+  fill-opacity: 0.35;
+  stroke: var(--zone);
+  stroke-width: 2;
+  transition: fill-opacity 0.15s;
+}
+.zone:hover *,
+.zone:focus-visible *,
+.zone.is-active * {
+  fill-opacity: 0.85;
+}
+
+/* Un seul mouvement spontané : le paquet qui traverse la liaison Terre. */
+@keyframes transit {
+  from { left: 0; }
+  to { left: calc(100% - 14px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition: none !important;
+  }
+}

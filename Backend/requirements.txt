@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+psycopg[binary]==3.3.9
+psycopg-pool==3.3.3
+PyJWT
+python-dotenv
+joblib
+numpy
+pandas
+scikit-learn

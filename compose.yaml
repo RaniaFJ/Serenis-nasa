@@ -1,0 +1,64 @@
+# SENTRA — base PostgreSQL + API FastAPI + interface React (nginx)
+# Lancer :  docker compose up --build      puis ouvrir http://localhost:8080
+services:
+  db:
+    image: postgres:16
+    container_name: sentra-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: SENTRA_APP
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Lance setup.ps1 (ou copie .env.example en .env)}
+      ASTRO_LOGIN_PASSWORD: ${ASTRO_LOGIN_PASSWORD:?Lance setup.ps1 (ou copie .env.example en .env)}
+    volumes:
+      - sentra_pgdata:/var/lib/postgresql/data
+      # Scripts exécutés dans l'ordre alphabétique à la PREMIÈRE création du volume
+      - ./docker/postgres/init/00-create-login.sh:/docker-entrypoint-initdb.d/00-create-login.sh:ro
+      - ./Backend/BD/sentra_health_pg_full.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./docker/postgres/init/02-configure-login.sh:/docker-entrypoint-initdb.d/02-configure-login.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d SENTRA_APP"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentra-api
+    restart: unless-stopped
+    environment:
+      # L'API se connecte avec le rôle restreint astro_login (soumis à la sécurité par ligne), jamais en superutilisateur
+      DATABASE_URL: postgresql://astro_login:${ASTRO_LOGIN_PASSWORD}@db:5432/SENTRA_APP
+      JWT_SECRET: ${JWT_SECRET:?Lance setup.ps1 (ou copie .env.example en .env)}
+      DEMO_PASSCODE: ${DEMO_PASSCODE:?Lance setup.ps1 (ou copie .env.example en .env)}
+    ports:
+      - "127.0.0.1:8000:8000"   # documentation Swagger : http://localhost:8000/docs
+    networks:
+      default:
+        aliases: [backend]
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_USE_MOCK: "false"
+    container_name: sentra-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  sentra_pgdata:

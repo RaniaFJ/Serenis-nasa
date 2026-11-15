@@ -1,0 +1,12 @@
+.git
+.venv
+venv
+**/__pycache__
+**/*.pyc
+ml/data
+ml/notebooks
+
+.env
+**/.env
+frontend
+docs
