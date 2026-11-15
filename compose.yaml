@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:16
+    container_name: sentra-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: SENTRA_APP
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Set POSTGRES_ADMIN_PASSWORD in .env}
+      ASTRO_LOGIN_PASSWORD: ${ASTRO_LOGIN_PASSWORD:?Set ASTRO_LOGIN_PASSWORD in .env}
+    volumes:
+      - sentra_pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init/00-create-login.sh:/docker-entrypoint-initdb.d/00-create-login.sh:ro
+      - ./Backend/BD/sentra_health_pg_full.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./docker/postgres/init/02-configure-login.sh:/docker-entrypoint-initdb.d/02-configure-login.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d SENTRA_APP"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentra-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://astro_login:${ASTRO_LOGIN_PASSWORD}@db:5432/SENTRA_APP
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      DEMO_PASSCODE: ${DEMO_PASSCODE:?Set DEMO_PASSCODE in .env}
+    ports:
+      - "127.0.0.1:8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: ./frontend2
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    container_name: sentra-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  sentra_pgdata:
