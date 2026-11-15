@@ -41,7 +41,7 @@ export const BODY_SYSTEMS = [
   {
     id: 'brain',
     name: 'Cerveau & Neuro-Oculaire',
-    description: 'Régulation circadienne, cognition, stress et pression intracrânienne (syndrome SANS).',
+    description: 'R\u00E9gulation circadienne, cognition, stress et pression intracr\u00E2nienne (syndrome SANS).',
     indicators: ['sleep', 'stress', 'mood'],
   },
   {

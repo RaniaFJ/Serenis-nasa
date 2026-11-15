@@ -2,6 +2,7 @@ import { ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { INDICATORS_CATALOG } from '../data/serenisDb';
 import { useMission } from '../context/MissionContext';
 import StatusBadge, { getStatusMeta } from '../components/StatusBadge';
+import AIStressPanel from '../components/AIStressPanel';
 
 function ScoreRing({ score, status }) {
   const r = 62;
@@ -36,7 +37,7 @@ function ScoreRing({ score, status }) {
   );
 }
 
-export default function Dashboard() {
+export default function Dashboard({ token }) {
   const {
     env,
     values,
@@ -202,10 +203,12 @@ export default function Dashboard() {
         </div>
       </section>
 
+      <AIStressPanel token={token} />
+
       <section className="bg-slate-900/90 border border-cyan-500/20 rounded-2xl p-5">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <div>
-            <h2 className="text-base font-bold text-white">Contre-mesures & Tâches du Jour</h2>
+            <h2 className="text-base font-bold text-white">Contre-mesures & T\u00E2ches du Jour</h2>
             <p className="text-xs text-slate-400 font-mono">
               SÉRIE : <span className="text-amber-400 font-bold">14 JOURS</span> • XP TOTAL :{' '}
               <span className="text-cyan-300 font-bold">{totalXp} XP</span>

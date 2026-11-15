@@ -1,0 +1,78 @@
+import os
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from psycopg import errors as pg, Error as PgError
+
+from app.database import pool
+from app.routers import auth, ai, vitals, gamification
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ai.load_model()
+    await pool.open()
+    yield
+    await pool.close()
+
+app = FastAPI(title="Astro API", lifespan=lifespan)
+# CORS : en production le front et l'API partagent la même origine (nginx relaie /api), donc aucun CORS n'est nécessaire.
+# En développement (Vite sur :5173), on n'autorise que les origines listées dans CORS_ORIGINS — jamais "*".
+CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:8080").split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_methods=["GET", "POST", "PATCH"],
+    allow_headers=["Authorization", "Content-Type"],
+)
+app.include_router(auth.router)
+app.include_router(vitals.router)
+app.include_router(gamification.router)
+app.include_router(ai.router)
+
+def _pg_response(status: int, code: str, message: str, exc: PgError) -> JSONResponse:
+    d = exc.diag
+    return JSONResponse(
+        status_code=status,
+        content={
+            "error": code,
+            "message": message,
+            "detail": d.message_primary,
+            "table": d.table_name,
+            "constraint": d.constraint_name,
+        },
+    )
+
+@app.exception_handler(pg.CheckViolation)
+async def check_violation(_: Request, exc: pg.CheckViolation):
+    return _pg_response(422, "check_violation", "Valeur invalide (contrainte CHECK).", exc)
+
+@app.exception_handler(pg.NotNullViolation)
+async def not_null_violation(_: Request, exc: pg.NotNullViolation):
+    return _pg_response(422, "not_null_violation", "Champ obligatoire manquant.", exc)
+
+@app.exception_handler(pg.UniqueViolation)
+async def unique_violation(_: Request, exc: pg.UniqueViolation):
+    return _pg_response(409, "unique_violation", "Cette entrée existe déjà.", exc)
+
+@app.exception_handler(pg.ForeignKeyViolation)
+async def fk_violation(_: Request, exc: pg.ForeignKeyViolation):
+    return _pg_response(409, "foreign_key_violation", "Référence invalide.", exc)
+
+@app.exception_handler(pg.InsufficientPrivilege)
+async def insufficient_privilege(_: Request, exc: pg.InsufficientPrivilege):
+    # Also raised by RLS "violates row-level security policy"
+    return _pg_response(403, "insufficient_privilege", "Accès refusé par la politique de sécurité.", exc)
+
+@app.exception_handler(pg.RaiseException)
+async def raise_exception(_: Request, exc: pg.RaiseException):
+    # RAISE EXCEPTION coming from triggers / SQL functions
+    return _pg_response(400, "database_rule", "Règle métier refusée par la base.", exc)
+
+@app.exception_handler(PgError)
+async def generic_db_error(_: Request, exc: PgError):
+    return _pg_response(500, "database_error", "Erreur base de données.", exc)
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}

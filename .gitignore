@@ -1,0 +1,35 @@
+# Secrets and environment variables
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Node.js
+node_modules/
+dist/
+dist-ssr/
+
+# Local files
+*.log
+.DS_Store
+# Large raw WESAD dataset files
+ml/data/raw/WESAD/S*/
+
+# Trained models derived from WESAD
+ml/saved_models/*.joblib
+
+# Generated experimental datasets and results
+ml/data/processed/*.csv
+
+# Generated WESAD-derived API test payloads
+ml/data/processed/sentra_*_test_payload.json
+
+# WESAD documentation
+ml/data/raw/WESAD/wesad_readme.pdf
